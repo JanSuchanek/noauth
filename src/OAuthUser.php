@@ -16,6 +16,7 @@ class OAuthUser
 		public readonly string $firstName,
 		public readonly string $lastName,
 		public readonly ?string $avatarUrl = null,
+		/** @var array<string, mixed> */
 		public readonly array $raw = [],
 	) {}
 

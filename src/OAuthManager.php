@@ -87,6 +87,7 @@ class OAuthManager
 	{
 		$p = $this->getLeagueProvider($provider);
 		$token = $p->getAccessToken('authorization_code', ['code' => $code]);
+		/** @var \League\OAuth2\Client\Token\AccessToken $token */
 		$owner = $p->getResourceOwner($token);
 
 		$data = $owner->toArray();
@@ -182,6 +183,9 @@ class OAuthManager
 	}
 
 
+	/**
+	 * @param array<string, mixed> $data
+	 */
 	private function extractAvatar(array $data): ?string
 	{
 		$picture = $data['picture'] ?? null;

@@ -50,12 +50,14 @@ class OAuthExtension extends CompilerExtension
 	public function loadConfiguration(): void
 	{
 		$builder = $this->getContainerBuilder();
+		/** @var \stdClass $config */
 		$config = $this->getConfig();
 
 		$def = $builder->addDefinition($this->prefix('manager'))
 			->setFactory(OAuthManager::class);
 
 		foreach (['google', 'microsoft', 'facebook'] as $provider) {
+			/** @var \stdClass $pc */
 			$pc = $config->$provider;
 			if ($pc->clientId !== '') {
 				$def->addSetup('addProvider', [$provider, $pc->clientId, $pc->clientSecret, $pc->redirectUri]);
