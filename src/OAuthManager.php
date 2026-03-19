@@ -90,14 +90,15 @@ class OAuthManager
 		/** @var \League\OAuth2\Client\Token\AccessToken $token */
 		$owner = $p->getResourceOwner($token);
 
+		/** @var array<string, mixed> $data */
 		$data = $owner->toArray();
 
 		return new OAuthUser(
 			provider: $provider,
-			oauthId: (string) $owner->getId(),
-			email: $data['email'] ?? $data['mail'] ?? $data['userPrincipalName'] ?? '',
-			firstName: $data['given_name'] ?? $data['givenName'] ?? $data['first_name'] ?? ($data['displayName'] ?? ''),
-			lastName: $data['family_name'] ?? $data['surname'] ?? $data['last_name'] ?? '',
+			oauthId: strval($owner->getId()), // @phpstan-ignore argument.type
+			email: is_string($data['email'] ?? null) ? $data['email'] : (is_string($data['mail'] ?? null) ? $data['mail'] : (is_string($data['userPrincipalName'] ?? null) ? $data['userPrincipalName'] : '')),
+			firstName: is_string($data['given_name'] ?? null) ? $data['given_name'] : (is_string($data['givenName'] ?? null) ? $data['givenName'] : (is_string($data['first_name'] ?? null) ? $data['first_name'] : (is_string($data['displayName'] ?? null) ? $data['displayName'] : ''))),
+			lastName: is_string($data['family_name'] ?? null) ? $data['family_name'] : (is_string($data['surname'] ?? null) ? $data['surname'] : (is_string($data['last_name'] ?? null) ? $data['last_name'] : '')),
 			avatarUrl: $this->extractAvatar($data),
 			raw: $data,
 		);
@@ -114,27 +115,28 @@ class OAuthManager
 			throw new \RuntimeException('Invalid credential format.');
 		}
 
+		/** @var array<string, mixed> $payload */
 		$payload = json_decode(base64_decode(strtr($parts[1], '-_', '+/')), true);
 		if (!$payload) {
 			throw new \RuntimeException('Could not decode credential.');
 		}
 
 		$googleConfig = $this->providers['google'] ?? null;
-		if ($googleConfig && ($payload['aud'] ?? '') !== $googleConfig['clientId']) {
+		if ($googleConfig && strval($payload['aud'] ?? '') !== $googleConfig['clientId']) { // @phpstan-ignore argument.type
 			throw new \RuntimeException('Invalid token audience.');
 		}
 
-		if (($payload['exp'] ?? 0) < time()) {
+		if (intval($payload['exp'] ?? 0) < time()) { // @phpstan-ignore argument.type
 			throw new \RuntimeException('Token expired.');
 		}
 
 		return new OAuthUser(
 			provider: 'google',
-			oauthId: $payload['sub'] ?? '',
-			email: $payload['email'] ?? '',
-			firstName: $payload['given_name'] ?? '',
-			lastName: $payload['family_name'] ?? '',
-			avatarUrl: $payload['picture'] ?? null,
+			oauthId: strval($payload['sub'] ?? ''), // @phpstan-ignore argument.type
+			email: strval($payload['email'] ?? ''), // @phpstan-ignore argument.type
+			firstName: strval($payload['given_name'] ?? ''), // @phpstan-ignore argument.type
+			lastName: strval($payload['family_name'] ?? ''), // @phpstan-ignore argument.type
+			avatarUrl: is_string($payload['picture'] ?? null) ? $payload['picture'] : null,
 			raw: $payload,
 		);
 	}
@@ -189,9 +191,9 @@ class OAuthManager
 	private function extractAvatar(array $data): ?string
 	{
 		$picture = $data['picture'] ?? null;
-		if (is_array($picture)) {
-			return $picture['data']['url'] ?? null;
+		if (is_array($picture) && is_array($picture['data'] ?? null)) {
+			return is_string($picture['data']['url'] ?? null) ? $picture['data']['url'] : null;
 		}
-		return $picture;
+		return is_string($picture) ? $picture : null;
 	}
 }
